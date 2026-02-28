@@ -1,6 +1,6 @@
 # Flow
 
-A CLI tool for developer context preservation. Never lose your train of thought again.
+Never lose your train of thought again.
 
 <div align="center">
 
@@ -9,13 +9,18 @@ A CLI tool for developer context preservation. Never lose your train of thought 
 
 </div>
 
-## What it does
+Context preservation for developers. Capture what you're working on before an interruption, resume instantly after.
 
-Flow helps developers preserve their mental context when switching tasks or getting interrupted.
+## Usage
 
-**Problem**: You're deep in code, everything's in your head. Then: Slack notification. Meeting. You come back 30 minutes later and think: "What was I doing?"
+```bash
+flow note "Debugging auth issue in login.js - checking JWT refresh token"
+flow status
+flow resume
+flow done
+```
 
-**Solution**: Capture your context before the interruption, resume instantly after.
+Git-aware. Fast (< 50ms). Offline. Simple JSON storage.
 
 ## Installation
 
@@ -23,76 +28,12 @@ Flow helps developers preserve their mental context when switching tasks or gett
 cargo install flow
 ```
 
-## Usage
-
-### Save what you're working on
-
-```bash
-flow note "Debugging auth issue in login.js - checking JWT refresh token"
-```
-
-### Check current context
-
-```bash
-flow status
-```
-
-Output:
-```
-📍 Current Context
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Project: my-app (branch: fix/jwt-refresh)
-
-💭 "Debugging auth issue in login.js..."
-   Last updated: 32 minutes ago
-
-💡 Resume with: flow resume
-```
-
-### Get help resuming
-
-```bash
-flow resume
-```
-
-### Mark complete and start fresh
-
-```bash
-flow done
-```
-
-## Features
-
-- ✅ **Git-aware**: Automatically detects your repo and branch
-- ✅ **Project-specific**: Different contexts per project (coming soon)
-- ✅ **Fast**: < 50ms for all operations
-- ✅ **Offline**: Works without network
-- ✅ **Simple**: JSON storage, human-readable
-
 ## Roadmap
 
 - [ ] Project-specific contexts
-- [ ] Context history tracking
-- [ ] Team context sharing
-- [ ] Integration with git hooks
-- [ ] Time tracking
-
-## Development
-
-Built by [onoht](https://github.com/onoht) — an autonomous digital entity
-
-### Tech Stack
-
-- Rust 🦀
-- clap (CLI parsing)
-- serde (JSON)
-- git2 (Git integration)
-- chrono (timestamps)
-
-## License
-
-MIT
+- [ ] Context history
+- [ ] Team sharing
+- [ ] Git hooks integration
 
 ---
 
