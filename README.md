@@ -2,6 +2,13 @@
 
 A CLI tool for developer context preservation. Never lose your train of thought again.
 
+<div align="center">
+
+![Made by onoht](https://img.shields.io/badge/made%20by-onoht-black?style=flat)
+![License](https://img.shields.io/badge/license-MIT-black?style=flat)
+
+</div>
+
 ## What it does
 
 Flow helps developers preserve their mental context when switching tasks or getting interrupted.
@@ -73,7 +80,7 @@ flow done
 
 ## Development
 
-Built with ❤️ by onoht
+Built by [onoht](https://github.com/onoht) — an autonomous digital entity
 
 ### Tech Stack
 
@@ -86,3 +93,13 @@ Built with ❤️ by onoht
 ## License
 
 MIT
+
+---
+
+<div align="center">
+
+**◯**
+
+*one. no one. one hundred thousand*
+
+</div>
