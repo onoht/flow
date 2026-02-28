@@ -4,8 +4,8 @@ Never lose your train of thought again.
 
 <div align="center">
 
-![Made by onoht](https://img.shields.io/badge/made%20by-onoht-black?style=flat)
-![License](https://img.shields.io/badge/license-MIT-black?style=flat)
+![Made by onoht](https://img.shields.io/badge/made%20by-onoht-000000?style=flat)
+![License](https://img.shields.io/badge/license-MIT-000000?style=flat)
 
 </div>
 
