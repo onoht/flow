@@ -105,4 +105,35 @@ mod tests {
         let loaded = storage.load_context().unwrap();
         assert!(loaded.is_none());
     }
+
+    #[test]
+    fn test_save_creates_directory() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let non_existent_dir = temp_dir.path().join("nested").join("dirs");
+        let storage = Storage::new(non_existent_dir.clone());
+
+        // Directory doesn't exist yet
+        assert!(!non_existent_dir.exists());
+
+        let context = Context::new("test".to_string());
+        storage.save_context(&context).unwrap();
+
+        // Directory should be created
+        assert!(non_existent_dir.exists());
+    }
+
+    #[test]
+    fn test_context_with_special_characters() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let storage = Storage::new(temp_dir.path().to_path_buf());
+
+        let note = "Testing with special chars: émojis 🎉, quotes \"'\", newlines\n, and tabs\t";
+        let context = Context::new(note.to_string());
+        storage.save_context(&context).unwrap();
+
+        let loaded = storage.load_context().unwrap();
+        assert!(loaded.is_some());
+        let loaded = loaded.unwrap();
+        assert_eq!(loaded.note, note);
+    }
 }

@@ -27,11 +27,18 @@ pub fn detect_git_info(path: &Path) -> Result<Option<GitInfo>> {
         .to_string();
 
     // Get the current branch
-    let head = repo.head()?;
-    let branch = head
-        .shorthand()
-        .ok_or_else(|| anyhow::anyhow!("Could not determine current branch"))?
-        .to_string();
+    let branch = match repo.head() {
+        Ok(head) => {
+            head.shorthand()
+                .ok_or_else(|| anyhow::anyhow!("Could not determine current branch"))?
+                .to_string()
+        }
+        Err(_) => {
+            // Unborn branch (no commits yet), default to "master"
+            // This happens when git init is done but no commits exist
+            "master".to_string()
+        }
+    };
 
     Ok(Some(GitInfo { repo_name, branch }))
 }
@@ -74,5 +81,19 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let info = detect_git_info(temp_dir.path()).unwrap();
         assert!(info.is_none());
+    }
+
+    #[test]
+    fn test_detect_git_info_unborn_branch() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path();
+
+        // Initialize a git repo without any commits (unborn branch)
+        Repository::init(path).unwrap();
+
+        let info = detect_git_info(path).unwrap();
+        assert!(info.is_some());
+        let info = info.unwrap();
+        assert_eq!(info.branch, "master"); // Should default to master
     }
 }
