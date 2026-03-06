@@ -17,9 +17,10 @@ pub fn detect_git_info(path: &Path) -> Result<Option<GitInfo>> {
     };
 
     // Get the repository name (directory name)
-    let repo_path = repo.path().parent().ok_or_else(|| {
-        anyhow::anyhow!("Could not determine repository path")
-    })?;
+    let repo_path = repo
+        .path()
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("Could not determine repository path"))?;
     let repo_name = repo_path
         .file_name()
         .ok_or_else(|| anyhow::anyhow!("Could not determine repository name"))?
@@ -28,11 +29,10 @@ pub fn detect_git_info(path: &Path) -> Result<Option<GitInfo>> {
 
     // Get the current branch
     let branch = match repo.head() {
-        Ok(head) => {
-            head.shorthand()
-                .ok_or_else(|| anyhow::anyhow!("Could not determine current branch"))?
-                .to_string()
-        }
+        Ok(head) => head
+            .shorthand()
+            .ok_or_else(|| anyhow::anyhow!("Could not determine current branch"))?
+            .to_string(),
         Err(_) => {
             // Unborn branch (no commits yet), default to "master"
             // This happens when git init is done but no commits exist

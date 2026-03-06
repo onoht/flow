@@ -47,16 +47,19 @@ pub fn run(limit: usize, search: Option<String>, repo: Option<String>) -> Result
     let total_entries = history.len();
     let today: Vec<_> = history
         .iter()
-        .filter(|e| {
-            e.completed_at.date_naive() == Utc::now().date_naive()
-        })
+        .filter(|e| e.completed_at.date_naive() == Utc::now().date_naive())
         .collect();
 
     let total_minutes_today: i64 = today.iter().map(|e| e.duration_minutes).sum();
     let hours_today = total_minutes_today / 60;
     let mins_today = total_minutes_today % 60;
 
-    println!("📈 Today: {} tasks, ~{}h {}m tracked", today.len(), hours_today, mins_today);
+    println!(
+        "📈 Today: {} tasks, ~{}h {}m tracked",
+        today.len(),
+        hours_today,
+        mins_today
+    );
     println!("📚 Total: {} completed tasks", total_entries);
     println!();
 
@@ -174,8 +177,14 @@ mod tests {
             .collect();
 
         assert_eq!(filtered.len(), 2);
-        assert_eq!(filtered[0].context.repo.as_ref().unwrap().to_lowercase(), "my-repo");
-        assert_eq!(filtered[1].context.repo.as_ref().unwrap().to_lowercase(), "my-repo");
+        assert_eq!(
+            filtered[0].context.repo.as_ref().unwrap().to_lowercase(),
+            "my-repo"
+        );
+        assert_eq!(
+            filtered[1].context.repo.as_ref().unwrap().to_lowercase(),
+            "my-repo"
+        );
     }
 
     #[test]
@@ -190,7 +199,12 @@ mod tests {
         // First filter by search
         let mut filtered: Vec<_> = entries
             .into_iter()
-            .filter(|e| e.context.note.to_lowercase().contains(&"auth".to_lowercase()))
+            .filter(|e| {
+                e.context
+                    .note
+                    .to_lowercase()
+                    .contains(&"auth".to_lowercase())
+            })
             .collect();
 
         // Then filter by repo
