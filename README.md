@@ -25,8 +25,10 @@ Git-aware. Fast (< 50ms). Offline. Simple JSON storage.
 ## Installation
 
 ```bash
-cargo install flow
+cargo install flow-ctx
 ```
+
+This installs the `flow` binary.
 
 ## Documentation
 
