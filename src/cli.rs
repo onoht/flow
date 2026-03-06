@@ -42,4 +42,11 @@ pub enum Commands {
 
     /// Mark the current task as complete and clear context
     Done,
+
+    /// Generate shell completion scripts
+    Completions {
+        /// Shell to generate completions for
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
 }
