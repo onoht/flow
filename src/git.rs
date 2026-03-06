@@ -73,7 +73,8 @@ mod tests {
         let info = detect_git_info(path).unwrap();
         assert!(info.is_some());
         let info = info.unwrap();
-        assert_eq!(info.branch, "master");
+        // Branch name depends on git config (init.defaultBranch)
+        assert!(matches!(info.branch.as_str(), "master" | "main"));
     }
 
     #[test]
