@@ -1,6 +1,6 @@
 use anyhow::Result;
-use git2::Repository;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 /// Git information for the current directory
 pub struct GitInfo {
@@ -10,64 +10,127 @@ pub struct GitInfo {
 
 /// Detect git information for the current directory
 pub fn detect_git_info(path: &Path) -> Result<Option<GitInfo>> {
-    // Try to find a git repository
-    let repo = match Repository::discover(path) {
-        Ok(repo) => repo,
-        Err(_) => return Ok(None), // Not in a git repo
+    // Check if we're in a git repo
+    let output = Command::new("git")
+        .args(["rev-parse", "--git-dir"])
+        .current_dir(path)
+        .output();
+
+    let git_dir = match output {
+        Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).trim().to_string(),
+        _ => return Ok(None), // Not in a git repo
     };
 
-    // Get the repository name (directory name)
-    let repo_path = repo
-        .path()
-        .parent()
-        .ok_or_else(|| anyhow::anyhow!("Could not determine repository path"))?;
-    let repo_name = repo_path
-        .file_name()
-        .ok_or_else(|| anyhow::anyhow!("Could not determine repository name"))?
-        .to_string_lossy()
-        .to_string();
+    // Get the repository root directory name
+    let root_output = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .current_dir(path)
+        .output();
+
+    let repo_name = match root_output {
+        Ok(o) if o.status.success() => {
+            let root = Path::new(String::from_utf8_lossy(&o.stdout).trim());
+            root.file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "unknown".to_string())
+        }
+        _ => "unknown".to_string(),
+    };
 
     // Get the current branch
-    let branch = match repo.head() {
-        Ok(head) => head
-            .shorthand()
-            .ok_or_else(|| anyhow::anyhow!("Could not determine current branch"))?
-            .to_string(),
-        Err(_) => {
-            // Unborn branch (no commits yet), default to "master"
-            // This happens when git init is done but no commits exist
-            "master".to_string()
+    let branch_output = Command::new("git")
+        .args(["branch", "--show-current"])
+        .current_dir(path)
+        .output();
+
+    let branch = match branch_output {
+        Ok(o) if o.status.success() => {
+            let b = String::from_utf8_lossy(&o.stdout).trim().to_string();
+            if b.is_empty() {
+                // Detached HEAD or unborn branch - try to get HEAD ref
+                get_head_branch(&git_dir, path)
+            } else {
+                b
+            }
         }
+        _ => "master".to_string(),
     };
 
     Ok(Some(GitInfo { repo_name, branch }))
+}
+
+/// Get branch from .git/HEAD (for detached HEAD or unborn branches)
+fn get_head_branch(git_dir: &str, path: &Path) -> String {
+    use std::fs;
+
+    // Resolve .git directory (could be in worktree or submodule)
+    let git_path = if Path::new(git_dir).is_absolute() {
+        PathBuf::from(git_dir)
+    } else {
+        path.join(git_dir)
+    };
+
+    let head_path = git_path.join("HEAD");
+    if let Ok(content) = fs::read_to_string(&head_path) {
+        let content = content.trim();
+        // Check if it's a ref: refs/heads/branch-name
+        if let Some(branch) = content.strip_prefix("ref: refs/heads/") {
+            return branch.to_string();
+        }
+    }
+    "master".to_string()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::fs;
+    use std::process::Command;
     use tempfile::TempDir;
+
+    fn git_available() -> bool {
+        Command::new("git").arg("--version").output().is_ok()
+    }
+
+    fn init_git_repo(path: &Path) {
+        Command::new("git")
+            .args(["init"])
+            .current_dir(path)
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["config", "user.email", "test@example.com"])
+            .current_dir(path)
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["config", "user.name", "Test"])
+            .current_dir(path)
+            .output()
+            .unwrap();
+    }
 
     #[test]
     fn test_detect_git_info_in_repo() {
+        if !git_available() {
+            return;
+        }
+
         let temp_dir = TempDir::new().unwrap();
         let path = temp_dir.path();
-
-        // Initialize a git repo
-        Repository::init(path).unwrap();
+        init_git_repo(path);
 
         // Create a test file and commit
         fs::write(path.join("test.txt"), "test").unwrap();
-        let repo = Repository::open(path).unwrap();
-        let mut index = repo.index().unwrap();
-        index.add_path(Path::new("test.txt")).unwrap();
-        index.write().unwrap();
-
-        let tree_id = index.write_tree().unwrap();
-        let tree = repo.find_tree(tree_id).unwrap();
-        let sig = git2::Signature::now("Test", "test@example.com").unwrap();
-        repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+        Command::new("git")
+            .args(["add", "."])
+            .current_dir(path)
+            .output()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-m", "Initial commit"])
+            .current_dir(path)
+            .output()
             .unwrap();
 
         let info = detect_git_info(path).unwrap();
@@ -79,6 +142,10 @@ mod tests {
 
     #[test]
     fn test_detect_git_info_not_in_repo() {
+        if !git_available() {
+            return;
+        }
+
         let temp_dir = TempDir::new().unwrap();
         let info = detect_git_info(temp_dir.path()).unwrap();
         assert!(info.is_none());
@@ -86,15 +153,20 @@ mod tests {
 
     #[test]
     fn test_detect_git_info_unborn_branch() {
+        if !git_available() {
+            return;
+        }
+
         let temp_dir = TempDir::new().unwrap();
         let path = temp_dir.path();
 
         // Initialize a git repo without any commits (unborn branch)
-        Repository::init(path).unwrap();
+        init_git_repo(path);
 
         let info = detect_git_info(path).unwrap();
         assert!(info.is_some());
         let info = info.unwrap();
-        assert_eq!(info.branch, "master"); // Should default to master
+        // Should detect the default branch name from .git/HEAD
+        assert!(matches!(info.branch.as_str(), "master" | "main"));
     }
 }
