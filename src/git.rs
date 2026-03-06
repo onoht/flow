@@ -29,7 +29,8 @@ pub fn detect_git_info(path: &Path) -> Result<Option<GitInfo>> {
 
     let repo_name = match root_output {
         Ok(o) if o.status.success() => {
-            let root = Path::new(String::from_utf8_lossy(&o.stdout).trim());
+            let stdout = String::from_utf8_lossy(&o.stdout);
+            let root = Path::new(stdout.trim());
             root.file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| "unknown".to_string())
